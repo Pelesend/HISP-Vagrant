@@ -1,0 +1,15 @@
+# encoding: utf-8
+
+site 'http://community.opscode.com/api/v1'
+
+cookbook 'apt'
+cookbook 'git'
+cookbook 'imagemagick'
+cookbook 'nodejs', github: 'mdxp/nodejs-cookbook'
+cookbook 'postfix'
+cookbook 'dovecot'
+cookbook 'postgresql'
+cookbook 'rvm', github: 'fnichol/chef-rvm'
+cookbook 'memcached'
+cookbook 'locale', github: 'deepak/chef-locale'
+cookbook 'oh_my_zsh', github: 'shingara/oh-my-zsh-chef'
