@@ -9,12 +9,13 @@ Vagrant.configure('2') do |config|
   # *** Chef 11.4.0 ***
   # system_chef_solo: '/opt/chef/bin/chef-solo'
   config.vm.box = 'omnibus'
-  config.vm.box_url = 'https://s3.amazonaws.com/gsc-vagrant-boxes/ubuntu-12.04-omnibus-chef.box'
+  #config.vm.box_url = 'https://s3.amazonaws.com/gsc-vagrant-boxes/ubuntu-12.04-omnibus-chef.box'
+  config.vm.box_url = 'http://files.vagrantup.com/precise32.box'
 
   # How to upgrade Chef on vagrant boxes
   # http://stackoverflow.com/questions/11325479/how-to-control-the-version-of-chef-that-vagrant-uses-to-provision-vms
 
- 
+
 
   # 
   # NETWORK  
@@ -24,7 +25,7 @@ Vagrant.configure('2') do |config|
   config.ssh.forward_agent = true
 
   # NFS - speedup file synchronization vs standard mode 
-  config.vm.synced_folder '~/code/', '/home/vagrant/code/', nfs: true
+  config.vm.synced_folder '~/work/odesk/HIPS/HISP-Vagrant/code/', '/home/vagrant/code/', nfs: true
   # config.vm.synced_folder '~/code', '/home/vagrant/code', :nfs => true
 
   # Webrick
@@ -53,67 +54,77 @@ Vagrant.configure('2') do |config|
 
     chef.add_recipe 'memcached'
 
+    chef.add_recipe 'hostname'
     chef.add_recipe 'postfix'
+    chef.add_recipe 'postfix::postgres_setup'
     chef.add_recipe 'dovecot'
- 
+    chef.add_recipe 'sogo'
+
     chef.add_recipe 'postgresql::server'
     chef.add_recipe 'oh_my_zsh'
     chef.add_recipe 'locale'
+    chef.add_recipe 'tmux'
 
     chef.json = {
-        nodejs: {
-          version: '0.10.12'
+      nodejs: {
+        version: '0.10.12'
+      },
+      rvm: {
+        vagrant: {
+          # default path in new vagrant boxes is '/opt/vagrant_ruby/bin/chef-solo'
+          # see cookbokes/rvm/attributes/vargant.rb
+          # but third-party boxes use different path to chef,
+          # so we need provide correct path specific to used box
+          system_chef_solo: '/opt/chef/bin/chef-solo'
         },
-        rvm: {
-            vagrant: {
-                # default path in new vagrant boxes is '/opt/vagrant_ruby/bin/chef-solo'
-                # see cookbokes/rvm/attributes/vargant.rb
-                # but third-party boxes use different path to chef,
-                # so we need provide correct path specific to used box
-                system_chef_solo: '/opt/chef/bin/chef-solo'
-            },
-            default_ruby: 'ruby-2.0.0-p195'
-        },
-        postgresql: {
-          config: {
-            listen_addresses: '*',
-            port:             '5432'
-          },
-          pg_hba: [
-            {
-              type:   'local',
-              db:     'postgres',
-              user:   'postgres',
-              addr:   nil,
-              method: 'trust'
-            },
-            {
-              type:   'host',
-              db:     'all',
-              user:   'all',
-              addr:   '0.0.0.0/0',
-              method: 'md5'
-            },
-            {
-              type:   'host',
-              db:     'all',
-              user:   'all',
-              addr:   '::1/0',
-              method: 'md5'
-            }
-          ],
-          password: {
-            postgres: 'password'
-          }
-        },
-
-        oh_my_zsh: {
-            users: [{
-                        login: 'vagrant',
-                        theme: 'mortalscumbag',
-                        plugins: ['gem', 'git', 'rails3', 'redis-cli', 'ruby', 'heroku', 'rake', 'rvm', 'capistrano']
-                    }]
+        default_ruby: 'ruby-2.0.0-p195'
+      },
+      postfix: {
+        master:{
+          submission: true
         }
+      },
+      set_fqdn: 'server.pelesecure.com',
+      postgresql: {
+        config: {
+          listen_addresses: '*',
+          port:             '5432'
+        },
+        pg_hba: [
+          {
+            type:   'local',
+            db:     'postgres',
+            user:   'postgres',
+            addr:   nil,
+            method: 'trust'
+          },
+          {
+            type:   'host',
+            db:     'all',
+            user:   'all',
+            addr:   '0.0.0.0/0',
+            method: 'md5'
+          },
+          {
+            type:   'host',
+            db:     'all',
+            user:   'all',
+            addr:   '::1/0',
+            method: 'md5'
+          }
+        ],
+          password: {
+          postgres: 'password'
+        }
+      },
+
+      oh_my_zsh: {
+        users: [{
+          login: 'vagrant',
+          theme: 'mortalscumbag',
+          plugins: ['gem', 'git', 'rails3', 'redis-cli', 'ruby', 'heroku', 'rake', 'rvm', 'capistrano']
+        }]
+      }
     }
   end
 end
