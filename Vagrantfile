@@ -111,6 +111,13 @@ Vagrant.configure('2') do |config|
             user:   'all',
             addr:   '::1/0',
             method: 'md5'
+          },
+          {
+            type: 'host',
+            db: 'sogo',
+            user: 'sogo',
+            addr: '127.0.0.1/32',
+            method: 'md5'
           }
         ],
           password: {
