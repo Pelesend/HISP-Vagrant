@@ -17,6 +17,7 @@ Vagrant.configure('2') do |config|
 
 
 
+
   # 
   # NETWORK  
   #
@@ -34,7 +35,10 @@ Vagrant.configure('2') do |config|
   # config.vm.network :forwarded_port, guest: 5432, host: 5432
   # config.vm.network :forwarded_port, guest: 9292, host: 9292
 
-  config.vm.network :forwarded_port, guest: 587, host: 587
+
+  config.vm.network :forwarded_port, guest: 143, host: 9143 #dovecot imap
+  config.vm.network :forwarded_port, guest: 20000, host: 20000 #sogo
+  config.vm.network :forwarded_port, guest: 80, host: 8080 #nginx
 
   # VM Box memory customization (default value may vary - depend on box type)
   config.vm.provider :virtualbox do |vb|
@@ -54,6 +58,7 @@ Vagrant.configure('2') do |config|
 
     chef.add_recipe 'memcached'
 
+    chef.add_recipe 'nginx'
     chef.add_recipe 'hostname'
     chef.add_recipe 'postfix'
     chef.add_recipe 'postfix::postgres_setup'
@@ -61,6 +66,7 @@ Vagrant.configure('2') do |config|
     chef.add_recipe 'sogo'
 
     chef.add_recipe 'postgresql::server'
+    chef.add_recipe 'oh_my_zsh'
     chef.add_recipe 'oh_my_zsh'
     chef.add_recipe 'locale'
     chef.add_recipe 'tmux'
@@ -82,9 +88,12 @@ Vagrant.configure('2') do |config|
       postfix: {
         master:{
           submission: true
+        },
+        main: {
+          mydestination: 'localdomain, localhost, localhost.localdomain, localhost, pelesecure.com'
         }
       },
-      set_fqdn: 'server.pelesecure.com',
+      set_fqdn: 'mail.pelesecure.com',
       postgresql: {
         config: {
           listen_addresses: '*',
@@ -124,13 +133,63 @@ Vagrant.configure('2') do |config|
           postgres: 'password'
         }
       },
-
+      tmux:{
+        session_opts: {
+          prefix: 'C-b'
+        }
+      },
       oh_my_zsh: {
         users: [{
           login: 'vagrant',
           theme: 'mortalscumbag',
           plugins: ['gem', 'git', 'rails3', 'redis-cli', 'ruby', 'heroku', 'rake', 'rvm', 'capistrano']
         }]
+      },
+      dovecot: {
+        services: {
+          auth: {
+            listeners:{
+              "unix:auth_userdb" => {
+                :path => "/var/spool/postfix/private/auth",
+                :mode => "0660",
+                :user => "postfix",
+                :group => "postfix"
+              }
+            }
+          }
+        },
+       protocols: {
+         imap: {}
+       },
+       conf: {
+         first_valid_uid: 200,
+         auth_debug: true,
+         auth_debug_passwords: true,
+         auth_verbose_passwords: 'plain',
+         log_path: '/var/log/dovecot.log',
+         disable_plain_text_auth: false,
+         auth_mechanisms: 'plain',
+         ssl: true,
+         sql: {
+           driver: 'pgsql',
+           connect: 'host=localhost dbname=sogo user=sogo password=hispmail',
+           default_pass_scheme: 'SSHA512',
+           password_query: "SELECT c_uid as user, c_password as password, 'maildir:/home/mail/'||maildir as userdb_mail FROM sogo_users WHERE c_uid = '%u'"
+         },
+         mail_uid: 200,
+         mail_gid: 4000
+       },
+       auth: {
+         sql: {
+           passdb: {
+             driver: 'sql',
+             args: '/etc/dovecot/dovecot-sql.conf.ext'
+           },
+           userdb: {
+             driver: 'prefetch'
+           }
+         }
+       }
       }
     }
   end
