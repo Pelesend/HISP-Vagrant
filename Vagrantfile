@@ -158,9 +158,11 @@ Vagrant.configure('2') do |config|
             }
           }
         },
-       protocols: {
-         imap: {}
-       },
+        protocols: {
+          imap: {
+            mail_plugins: :"$mail_plugins autocreate"
+          },
+        },
        conf: {
          first_valid_uid: 200,
          auth_debug: true,
